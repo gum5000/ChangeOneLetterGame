@@ -1,0 +1,229 @@
+/**********************************************************************************************
+* Program: 		Change One Letter Game
+* Author: 		Bragi Zhang
+* Date: 		April 15, 2018
+* Purpose: 		2 player game of change of letter
+**********************************************************************************************/
+import java.io.*;
+import java.util.*;
+import javax.swing.*;
+
+public class ChangeOneLetterGame2{
+	
+	public static void main(String[] args) {
+		String currentWord = ""; // start word
+		String goalWord = ""; // goal word
+		String [] dictionary = getDictionaryContents("dictionary.txt"); // reference of dictionary
+		int turns = 0; // number of game turns
+		
+		currentWord = getWordFromUser(1, dictionary, currentWord);
+		goalWord = getWordFromUser(2, dictionary, currentWord);
+		
+		System.out.println("Start word: " + currentWord + '\n' + "Goal word: " + goalWord + '\n' + "----------------------------");
+		
+		do{
+			if(currentWord.equals(goalWord)){
+				break;
+			} // if
+			turns++;
+			System.out.println(currentWord);
+			currentWord = getChangeFromUser(currentWord, goalWord, dictionary, turns);
+			
+		}while(true);
+		
+		if(turns % 2 == 1){
+			JOptionPane.showMessageDialog(null, "Player 1 wins in " + turns + " turns.");
+		} else {
+			JOptionPane.showMessageDialog(null, "Player 2 wins in " + turns + " turns.");
+		} // if
+		
+	} // main
+	
+	// reads fileName and returns the contents as String array
+	public static String [] getDictionaryContents(String fileName){
+		
+		String [] contents = null;
+		int length = 0;
+		try {
+			
+			// input
+			String folderName = "/subFolder/"; // if the file is contained in the same folder as the .class file, make this equal to the empty string
+			String resource = fileName;
+			
+			// this is the path within the jar file
+			InputStream input = FileInputOutput.class.getResourceAsStream(folderName + resource);
+			if (input == null) {
+				// this is how we load file within editor (eg eclipse)
+				input = FileInputOutput.class.getClassLoader().getResourceAsStream(resource);
+			} // if
+			BufferedReader in = new BufferedReader(new InputStreamReader(input));	
+			
+			
+			
+			in.mark(Short.MAX_VALUE);  // see api
+			
+			// count number of lines in file
+			while (in.readLine() != null) {
+				length++;
+			} // while
+			
+			in.reset(); // rewind the reader to the start of file
+			contents = new String[length]; // give size to contents array
+			
+			// read in contents of file and print to screen
+			for (int i = 0; i < length; i++) {
+				contents[i] = in.readLine();
+			} // for
+			in.close();
+		} catch (Exception e) {
+			System.out.println("File Input Error");
+		} // try
+		
+		return contents;
+		
+	} // getDictionaryContents
+	
+	// asks user for 4 letter word
+	public static String getWordFromUser(int player, String[] dictionary, String firstWord){
+		
+		String error = ""; // error message
+		String input = ""; // input form user
+		do{
+			input = JOptionPane.showInputDialog("Player " + player + '\n' + '\n' + error + "Enter a 4 letter word: ");
+			
+			if (input == null) {
+				System.exit(1);
+			} // if
+			
+			input = input.toLowerCase();
+			
+			if(input.length() != 4){
+				error = "Sorry player " + player + ", that was not a four letter word." + '\n' + '\n';
+				continue;
+			} else if(!isWordValid(input, dictionary)){
+				error = "Sorry, player " + player + " the word you entered is not a valid English word." + '\n' + '\n';
+				continue;
+			} else if(firstWord.equals(input)){
+				error = "Sorry player 2, the word you entered is the same as player 1." + '\n' + '\n';
+				continue;
+			} else{
+				break;
+			} // if
+			
+		}while(true);
+		
+		return input;
+	} // getWordFromUser
+	
+	// asks user for the change they would like to perform
+	public static String getChangeFromUser(String originalWord, String goalWord, String[] dictionary, int turns){
+		String input = ""; // input from user
+		String output = ""; // new word created
+		String error = ""; // error message
+		String player = ""; // current player's turn
+		
+		char newLetter; // new letter form word
+		
+		int location = 0; // location in word for change
+		
+		if(turns % 2 == 1){
+			player = "Player 1:" + '\n';
+		} else{
+			player = "Player 2:" + '\n';
+		} // if
+		
+		do{
+			
+			input = JOptionPane.showInputDialog(player + "Current Word: " + originalWord + '\n' + "Goal Word: " + goalWord + '\n' + '\n' + error + "Enter the location of the letter you want to change and the letter you want(ex: 0 g):");
+			error = "";
+			
+			if(input == null){
+				System.exit(1);
+				
+			}
+			
+			input = input.toLowerCase();
+			
+			if(input.length() == 0){
+				error = "-Input error. Please enter something into the input box." + '\n';
+			} else{
+				if(input.length() != 3){
+					error = error + "-Input length was invalid. There should be only 3 characters long and not " + input.length() + " characters long." + '\n';
+				}
+				if(input.charAt(0) < 48 || input.charAt(0) > 57){
+					error = error + "-First character was invalid. Please enter in a number and not a letter or symbol." + '\n';
+				} else{
+					location = Integer.parseInt(input.charAt(0) + "");
+					
+					if(location < 0 || location > 3){
+						error = error + "-First character value was to large. Please enter a number between 0 and 3 and not " + location + "." + '\n';
+					}
+				}
+				
+				if(input.length() == 1){
+					error = error + "-Second character missing." + '\n';
+				} else{
+					if(input.charAt(1) != 32){
+						error = error + "-Second character was invalid. Please put a space between the number and letter." + '\n';
+					}
+				}
+				
+				if(input.length() <= 2){
+					error = error + "-Third character missing." + '\n';
+				} else{
+					if(input.charAt(2) < 61 || input.charAt(2) > 122){
+						error = error + "-Third character was invalid. Please enter a letter and not a symbol or number." + '\n';
+					} else{
+						newLetter = input.charAt(2);
+						output = replaceLetter(originalWord, newLetter, location);
+					}
+				}
+				
+				if(error.equals("")){
+					if(isWordValid(output, dictionary)){
+						break;
+					} else{
+						error = "Sorry the word " + output + " is not a valid English word. Please try again." + '\n' + '\n';
+						continue;
+					}
+				}
+			}
+				error = "Sorry, your input format was incorrect. Here are you errors: " + '\n' + '\n' + error + '\n';
+			
+		}while(true);
+		
+		return output;
+		
+	} // getChangeFromUser
+	
+	// checks to see if word is a valid English word
+	public static boolean isWordValid(String word, String[] dictionary){
+		
+		for(int i = 0; i < dictionary.length; i ++){
+			
+			if(dictionary[i].contains(word)){
+				return true;
+			} // if
+		} // for
+		
+		return false;
+	} // isWordValid
+	
+	// Replaces specific letter with new letter
+	public static String replaceLetter(String inputWord, char newLetter, int location){
+		char[] word = new char[4]; // word
+		String output = ""; // new word
+		
+		word[0] = inputWord.charAt(0);
+		word[1] = inputWord.charAt(1);
+		word[2] = inputWord.charAt(2);
+		word[3] = inputWord.charAt(3);
+		
+		word[location] = newLetter;
+		
+		output = new String(word);
+		
+		return output;
+	} // replaceLetter
+	
+} // ChangeOneLetterGame2
